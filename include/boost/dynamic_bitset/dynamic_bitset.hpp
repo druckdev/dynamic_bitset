@@ -1305,9 +1305,16 @@ template <typename Block, typename Allocator>
 dynamic_bitset<Block, Allocator>
 dynamic_bitset<Block, Allocator>::get_block_subset(size_type pos, size_type len)
 {
-    auto first = m_bits.begin() + block_index(pos);
-    auto last = m_bits.begin() + block_index(pos + len) + 1;
-    return dynamic_bitset<Block, Allocator>(first, last, get_allocator());
+	size_type end_block = block_index(pos + len);
+	assert(end_block < num_blocks());
+
+	auto first = m_bits.begin() + block_index(pos);
+	auto last = m_bits.begin() + block_index(pos + len) + 1;
+	dynamic_bitset<Block, Allocator> subset(first, last, get_allocator());
+
+	*(subset.m_bits.begin()) &= bit_mask(bit_index(pos), bits_per_block - 1);
+	*(subset.m_bits.end() - 1) &= bit_mask(0, bit_index(pos + len) - 1);
+	return subset;
 }
 
 
