@@ -228,6 +228,7 @@ public:
 #endif // BOOST_NO_CXX11_RVALUE_REFERENCES
 
     allocator_type get_allocator() const;
+    buffer_type& get_blocks();
 
     // size changing operations
     void resize(size_type num_bits, bool value = false);
@@ -754,6 +755,13 @@ inline typename dynamic_bitset<Block, Allocator>::allocator_type
 dynamic_bitset<Block, Allocator>::get_allocator() const
 {
     return m_bits.get_allocator();
+}
+
+template <typename Block, typename Allocator>
+std::vector<Block, Allocator>&
+dynamic_bitset<Block, Allocator>::get_blocks()
+{
+    return this->m_bits;
 }
 
 //-----------------------------------------------------------------------------
