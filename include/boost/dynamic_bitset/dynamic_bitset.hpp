@@ -307,7 +307,7 @@ public:
     // block operations
     dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos, size_type len);
     dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos);
-    dynamic_bitset get_block_subset(size_type pos, size_type len);
+    dynamic_bitset get_block_subset(size_type pos, size_type len, bool cyclic = true);
 
     // subscript
     reference operator[](size_type pos) {
@@ -1303,14 +1303,30 @@ dynamic_bitset<Block, Allocator>::block_or_at(const dynamic_bitset& rhs, size_ty
 
 template <typename Block, typename Allocator>
 dynamic_bitset<Block, Allocator>
-dynamic_bitset<Block, Allocator>::get_block_subset(size_type pos, size_type len)
+dynamic_bitset<Block, Allocator>::get_block_subset(size_type pos, size_type len, bool cyclic)
 {
 	size_type end_block = block_index(pos + len);
-	assert(end_block < num_blocks());
 
 	auto first = m_bits.begin() + block_index(pos);
-	auto last = m_bits.begin() + block_index(pos + len) + 1;
-	dynamic_bitset<Block, Allocator> subset(first, last, get_allocator());
+	dynamic_bitset<Block, Allocator> subset;
+
+	if (cyclic) {
+		if (end_block >= num_blocks()) {
+			// TODO: use subtraction if len is small enough?
+			end_block %= num_blocks();
+
+			subset = dynamic_bitset<Block, Allocator>(first, m_bits.end(), get_allocator());
+			first = m_bits.begin();
+		}
+		auto last = m_bits.begin() + end_block + 1;
+		subset.m_bits.insert(subset.m_bits.end(), first, last);
+		subset.m_num_bits = subset.m_bits.size() * subset.bits_per_block;
+	} else {
+		assert(end_block < num_blocks());
+
+		auto last = m_bits.begin() + block_index(pos + len) + 1;
+		subset = dynamic_bitset<Block, Allocator>(first, last, get_allocator());
+	}
 
 	*(subset.m_bits.begin()) &= bit_mask(bit_index(pos), bits_per_block - 1);
 	*(subset.m_bits.end() - 1) &= bit_mask(0, bit_index(pos + len) - 1);
