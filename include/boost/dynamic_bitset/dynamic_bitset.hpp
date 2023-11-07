@@ -1291,8 +1291,6 @@ dynamic_bitset<Block, Allocator>::block_and_at(const dynamic_bitset& rhs, size_t
 		for (lhs_i = pos_block + 1; lhs_i < num_blocks(); ++lhs_i, ++rhs_i)
 			m_bits[lhs_i] &= rhs.m_bits[rhs_i];
 
-		rhs_i = num_blocks() - pos_block;
-
 		// From first block to one before end_block
 		for (lhs_i = 0; rhs_i < end_ridx; ++lhs_i, ++rhs_i)
 			m_bits[lhs_i] &= rhs.m_bits[rhs_i];
