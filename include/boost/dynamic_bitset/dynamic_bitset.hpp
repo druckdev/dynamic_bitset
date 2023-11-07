@@ -304,6 +304,10 @@ public:
     dynamic_bitset operator~() const;
     size_type count() const BOOST_NOEXCEPT;
 
+    // block operations
+    dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos);
+    dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos);
+
     // subscript
     reference operator[](size_type pos) {
         return reference(m_bits[block_index(pos)], bit_index(pos));
@@ -1253,6 +1257,37 @@ dynamic_bitset<Block, Allocator>::count() const BOOST_NOEXCEPT
 
     return do_count(m_bits.begin(), num_blocks(), Block(0),
                     static_cast<value_to_type<(bool)mode> *>(0));
+}
+
+//-----------------------------------------------------------------------------
+// block operations
+
+template <typename Block, typename Allocator>
+dynamic_bitset<Block, Allocator>&
+dynamic_bitset<Block, Allocator>::block_and_at(const dynamic_bitset& rhs, size_type pos)
+{
+	size_type pos_block = block_index(pos);
+
+	assert(num_blocks() - pos_block >= rhs.num_blocks());
+
+	for (size_type i = 0; i < rhs.num_blocks(); ++i)
+		m_bits[pos_block + i] &= rhs.m_bits[i];
+
+	return *this;
+}
+
+template <typename Block, typename Allocator>
+dynamic_bitset<Block, Allocator>&
+dynamic_bitset<Block, Allocator>::block_or_at(const dynamic_bitset& rhs, size_type pos)
+{
+	size_type pos_block = block_index(pos);
+
+	assert(num_blocks() - pos_block >= rhs.num_blocks());
+
+	for (size_type i = 0; i < rhs.num_blocks(); ++i)
+		m_bits[pos_block + i] |= rhs.m_bits[i];
+
+	return *this;
 }
 
 
