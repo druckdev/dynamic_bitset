@@ -306,7 +306,7 @@ public:
 
     // block operations
     dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos, size_type len, bool cyclic = true);
-    dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos);
+    dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos, bool cyclic = false);
     dynamic_bitset get_block_subset(size_type pos, size_type len, bool cyclic = true);
 
     // subscript
@@ -1313,15 +1313,25 @@ dynamic_bitset<Block, Allocator>::block_and_at(const dynamic_bitset& rhs, size_t
 
 template <typename Block, typename Allocator>
 dynamic_bitset<Block, Allocator>&
-dynamic_bitset<Block, Allocator>::block_or_at(const dynamic_bitset& rhs, size_type pos)
+dynamic_bitset<Block, Allocator>::block_or_at(const dynamic_bitset& rhs, size_type pos, bool cyclic)
 {
 	size_type pos_block = block_index(pos);
 
-	assert(num_blocks() - pos_block >= rhs.num_blocks());
+	if (cyclic && pos_block + rhs.num_blocks() > num_blocks()) {
+		size_type lhs_i, rhs_i;
 
-	for (size_type i = 0; i < rhs.num_blocks(); ++i)
-		m_bits[pos_block + i] |= rhs.m_bits[i];
+		for (lhs_i = pos_block, rhs_i = 0; lhs_i < num_blocks(); ++lhs_i, ++rhs_i)
+			m_bits[lhs_i] |= rhs.m_bits[rhs_i];
 
+		for (lhs_i = 0; rhs_i < rhs.num_blocks(); ++lhs_i, ++rhs_i)
+			m_bits[lhs_i] |= rhs.m_bits[rhs_i];
+
+	} else {
+		assert(pos_block + rhs.num_blocks() <= num_blocks());
+
+		for (size_type i = 0; i < rhs.num_blocks(); ++i)
+			m_bits[pos_block + i] |= rhs.m_bits[i];
+	}
 	return *this;
 }
 
