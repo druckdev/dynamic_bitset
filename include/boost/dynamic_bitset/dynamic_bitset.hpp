@@ -305,7 +305,7 @@ public:
     size_type count() const BOOST_NOEXCEPT;
 
     // block operations
-    dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos, size_type len);
+    dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos, size_type len, bool cyclic = true);
     dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos);
     dynamic_bitset get_block_subset(size_type pos, size_type len, bool cyclic = true);
 
@@ -1264,25 +1264,51 @@ dynamic_bitset<Block, Allocator>::count() const BOOST_NOEXCEPT
 //-----------------------------------------------------------------------------
 // block operations
 
+// TODO: maybe add a 'simple' version that does not have first and last block
+// logic as well as `len`, and rather give get_block_subset a flag to set bits
+// outside the interval to ones? Would that be faster?
 template <typename Block, typename Allocator>
 dynamic_bitset<Block, Allocator>&
-dynamic_bitset<Block, Allocator>::block_and_at(const dynamic_bitset& rhs, size_type pos, size_type len)
+dynamic_bitset<Block, Allocator>::block_and_at(const dynamic_bitset& rhs, size_type pos, size_type len, bool cyclic)
 {
 	size_type pos_block = block_index(pos);
 	size_type end_block = block_index(pos + len);
+	size_type end_ridx;
 
-	assert(end_block < num_blocks());
-
-	// Loop over all blocks except the first and last one
-	for (size_type i = 1; i < end_block - pos_block; ++i)
-		m_bits[pos_block + i] &= rhs.m_bits[i];
-
-	if (pos_block != end_block) {
-		m_bits[pos_block] &= rhs.m_bits[0] | bit_mask(0, bit_index(pos) - 1);
-		m_bits[end_block] &= rhs.m_bits[end_block - pos_block] | bit_mask(bit_index(pos + len), bits_per_block - 1);
-	} else {
+	if (pos_block == end_block) {
 		m_bits[pos_block] &= rhs.m_bits[0] | ~bit_mask(bit_index(pos), bit_index(pos + len - 1));
+		return *this;
 	}
+
+	if (cyclic && end_block >= num_blocks()) {
+		// TODO: use subtraction if num_blocks is small enough?
+		end_block %= num_blocks();
+		end_ridx = num_blocks() - (pos_block - end_block);
+
+		size_type lhs_i, rhs_i = 1;
+
+		// From block after `pos` until end
+		for (lhs_i = pos_block + 1; lhs_i < num_blocks(); ++lhs_i, ++rhs_i)
+			m_bits[lhs_i] &= rhs.m_bits[rhs_i];
+
+		rhs_i = num_blocks() - pos_block;
+
+		// From first block to one before end_block
+		for (lhs_i = 0; rhs_i < end_ridx; ++lhs_i, ++rhs_i)
+			m_bits[lhs_i] &= rhs.m_bits[rhs_i];
+	} else {
+		assert(end_block < num_blocks());
+		end_ridx = end_block - pos_block;
+
+		// Loop over all blocks except the first and last one
+		for (size_type i = 1; i < end_ridx; ++i)
+			m_bits[pos_block + i] &= rhs.m_bits[i];
+
+	}
+
+	// Only AND the bits inside the interval
+	m_bits[pos_block] &= rhs.m_bits[0] | bit_mask(0, bit_index(pos) - 1);
+	m_bits[end_block] &= rhs.m_bits[end_ridx] | bit_mask(bit_index(pos + len), bits_per_block - 1);
 
 	return *this;
 }
