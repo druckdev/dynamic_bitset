@@ -329,6 +329,9 @@ public:
     bool is_proper_subset_of(const dynamic_bitset& a) const;
     bool intersects(const dynamic_bitset & a) const;
 
+    static size_type block_index(size_type pos) BOOST_NOEXCEPT { return pos / bits_per_block; }
+    static block_width_type bit_index(size_type pos) BOOST_NOEXCEPT { return static_cast<block_width_type>(pos % bits_per_block); }
+
     // lookup
     size_type find_first() const;
     size_type find_next(size_type pos) const;
@@ -387,8 +390,6 @@ private:
     size_type m_do_find_from(size_type first_block) const;
 
     block_width_type count_extra_bits() const BOOST_NOEXCEPT { return bit_index(size()); }
-    static size_type block_index(size_type pos) BOOST_NOEXCEPT { return pos / bits_per_block; }
-    static block_width_type bit_index(size_type pos) BOOST_NOEXCEPT { return static_cast<block_width_type>(pos % bits_per_block); }
     static Block bit_mask(size_type pos) BOOST_NOEXCEPT { return Block(1) << bit_index(pos); }
     static Block bit_mask(size_type first, size_type last) BOOST_NOEXCEPT
     {
