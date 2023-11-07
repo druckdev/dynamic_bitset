@@ -306,7 +306,7 @@ public:
 
     // block operations
     dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos, size_type len, bool cyclic = true);
-    dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos, bool cyclic = false);
+    dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos, bool cyclic = true);
     dynamic_bitset get_block_subset(size_type pos, size_type len, bool cyclic = true);
 
     // subscript
