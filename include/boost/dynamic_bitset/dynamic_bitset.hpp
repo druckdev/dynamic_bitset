@@ -305,7 +305,7 @@ public:
     size_type count() const BOOST_NOEXCEPT;
 
     // block operations
-    dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos);
+    dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos, size_type len);
     dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos);
     dynamic_bitset get_block_subset(size_type pos, size_type len);
 
@@ -1265,14 +1265,23 @@ dynamic_bitset<Block, Allocator>::count() const BOOST_NOEXCEPT
 
 template <typename Block, typename Allocator>
 dynamic_bitset<Block, Allocator>&
-dynamic_bitset<Block, Allocator>::block_and_at(const dynamic_bitset& rhs, size_type pos)
+dynamic_bitset<Block, Allocator>::block_and_at(const dynamic_bitset& rhs, size_type pos, size_type len)
 {
 	size_type pos_block = block_index(pos);
+	size_type end_block = block_index(pos + len);
 
-	assert(num_blocks() - pos_block >= rhs.num_blocks());
+	assert(end_block < num_blocks());
 
-	for (size_type i = 0; i < rhs.num_blocks(); ++i)
+	// Loop over all blocks except the first and last one
+	for (size_type i = 1; i < end_block - pos_block; ++i)
 		m_bits[pos_block + i] &= rhs.m_bits[i];
+
+	if (pos_block != end_block) {
+		m_bits[pos_block] &= rhs.m_bits[0] | bit_mask(0, bit_index(pos) - 1);
+		m_bits[end_block] &= rhs.m_bits[end_block - pos_block] | bit_mask(bit_index(pos + len), bits_per_block - 1);
+	} else {
+		m_bits[pos_block] &= rhs.m_bits[0] | ~bit_mask(bit_index(pos), bit_index(pos + len - 1));
+	}
 
 	return *this;
 }
