@@ -307,6 +307,7 @@ public:
     // block operations
     dynamic_bitset& block_and_at(const dynamic_bitset& b, size_type pos);
     dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos);
+    dynamic_bitset get_block_subset(size_type pos, size_type len);
 
     // subscript
     reference operator[](size_type pos) {
@@ -1288,6 +1289,15 @@ dynamic_bitset<Block, Allocator>::block_or_at(const dynamic_bitset& rhs, size_ty
 		m_bits[pos_block + i] |= rhs.m_bits[i];
 
 	return *this;
+}
+
+template <typename Block, typename Allocator>
+dynamic_bitset<Block, Allocator>
+dynamic_bitset<Block, Allocator>::get_block_subset(size_type pos, size_type len)
+{
+    auto first = m_bits.begin() + block_index(pos);
+    auto last = m_bits.begin() + block_index(pos + len) + 1;
+    return dynamic_bitset<Block, Allocator>(first, last, get_allocator());
 }
 
 
