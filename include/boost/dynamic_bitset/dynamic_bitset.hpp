@@ -309,6 +309,7 @@ public:
     dynamic_bitset& block_or_at(const dynamic_bitset& b, size_type pos, bool cyclic = true);
     dynamic_bitset& block_xor_at(const dynamic_bitset& b, size_type pos, bool cyclic = true);
     dynamic_bitset get_block_subset(size_type pos, size_type len, bool cyclic = true);
+    block_type get_subset(size_type pos, size_type len);
 
     // subscript
     reference operator[](size_type pos) {
@@ -1394,6 +1395,43 @@ dynamic_bitset<Block, Allocator>::get_block_subset(size_type pos, size_type len,
 	return subset;
 }
 
+
+template <typename Block, typename Allocator>
+Block
+dynamic_bitset<Block, Allocator>::get_subset(size_type pos, size_type len)
+{
+	assert(len <= m_num_bits);
+	assert(len <= bits_per_block);
+	if (pos >= m_num_bits)
+		pos -= m_num_bits;
+
+	size_type start_block = block_index(pos);
+	size_type pos_idx = bit_index(pos);
+	size_type last_idx = pos + len - 1;
+	size_type end_block;
+	if (last_idx >= m_num_bits) {
+		end_block = 0;
+	} else {
+		end_block = block_index(last_idx);
+	}
+
+	Block value = 0;
+
+	value = (m_bits[start_block] >> pos_idx) & bit_mask(0, len - 1);
+
+	size_type start_nbits;
+	if (start_block == num_blocks() - 1) {
+		size_type extra = count_extra_bits();
+		start_nbits = (extra ? extra : bits_per_block) - pos_idx;
+	} else {
+		start_nbits = bits_per_block - pos_idx;
+	}
+	if (start_block != end_block) {
+		value |= (m_bits[end_block] << start_nbits) & bit_mask(0, len - 1);
+	}
+
+	return value;
+}
 
 //-----------------------------------------------------------------------------
 // conversions
