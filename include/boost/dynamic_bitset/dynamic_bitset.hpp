@@ -333,6 +333,15 @@ public:
 
     static size_type block_index(size_type pos) BOOST_NOEXCEPT { return pos / bits_per_block; }
     static block_width_type bit_index(size_type pos) BOOST_NOEXCEPT { return static_cast<block_width_type>(pos % bits_per_block); }
+    static Block bit_mask(size_type pos) BOOST_NOEXCEPT { return Block(1) << bit_index(pos); }
+    static Block bit_mask(size_type first, size_type last) BOOST_NOEXCEPT
+    {
+        Block res = (last == bits_per_block - 1)
+            ? detail::dynamic_bitset_impl::max_limit<Block>::value
+            : ((Block(1) << (last + 1)) - 1);
+        res ^= (Block(1) << first) - 1;
+        return res;
+    }
 
     // lookup
     size_type find_first() const;
@@ -392,15 +401,6 @@ private:
     size_type m_do_find_from(size_type first_block) const;
 
     block_width_type count_extra_bits() const BOOST_NOEXCEPT { return bit_index(size()); }
-    static Block bit_mask(size_type pos) BOOST_NOEXCEPT { return Block(1) << bit_index(pos); }
-    static Block bit_mask(size_type first, size_type last) BOOST_NOEXCEPT
-    {
-        Block res = (last == bits_per_block - 1)
-            ? detail::dynamic_bitset_impl::max_limit<Block>::value
-            : ((Block(1) << (last + 1)) - 1);
-        res ^= (Block(1) << first) - 1;
-        return res;
-    }
     static Block set_block_bits(Block block, size_type first,
         size_type last, bool val) BOOST_NOEXCEPT
     {
