@@ -342,6 +342,7 @@ public:
         res ^= (Block(1) << first) - 1;
         return res;
     }
+    block_width_type count_extra_bits() const BOOST_NOEXCEPT { return bit_index(size()); }
 
     // lookup
     size_type find_first() const;
@@ -400,7 +401,6 @@ private:
     static bool m_not_empty(Block x){ return x != Block(0); };
     size_type m_do_find_from(size_type first_block) const;
 
-    block_width_type count_extra_bits() const BOOST_NOEXCEPT { return bit_index(size()); }
     static Block set_block_bits(Block block, size_type first,
         size_type last, bool val) BOOST_NOEXCEPT
     {
